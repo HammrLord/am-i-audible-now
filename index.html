@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+        content="A causal, output-side ablation study of where prosody is represented in the RVQ codebooks of neural audio codecs (Mimi, SpeechTokenizer, EnCodec).">
+  <meta name="keywords"
+        content="neural audio codecs, prosody, residual vector quantization, causal ablation, Mimi, SpeechTokenizer, EnCodec">
+  <title>Am I Audible Now? Dissecting Prosody in Neural Audio Codecs</title>
+
+  <link rel="icon" href="./static/images/favicon.svg">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script defer src="./static/js/bulma-carousel.min.js"></script>
+  <script defer src="./static/js/index.js"></script>
+</head>
+<body>
+
+<nav class="navbar" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start navbar-centered">
+      <a class="navbar-item" href="https://dtu.ac.in" aria-label="Delhi Technological University">
+        <span class="icon"><i class="fas fa-home"></i></span>
+      </a>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Related Research</a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://arxiv.org/abs/2410.00037">Mimi (Moshi)</a>
+          <a class="navbar-item" href="https://arxiv.org/abs/2308.16692">SpeechTokenizer</a>
+          <a class="navbar-item" href="https://arxiv.org/abs/2210.13438">EnCodec</a>
+          <a class="navbar-item" href="https://arxiv.org/abs/2603.14035">Probing Codecs for Nuclear Tunes</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Am I Audible Now? Dissecting Prosody in Neural Audio Codecs</h1>
+
+          <!-- TODO: link each author to their homepage. -->
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><a href="#">Nikunj Gupta</a><sup>*1</sup>,</span>
+            <span class="author-block"><a href="#">Shreshth Rai</a><sup>*1</sup>,</span>
+            <span class="author-block"><a href="#">Kartik Sharma</a><sup>*1</sup>,</span>
+            <span class="author-block"><a href="#">Dinesh Kumar Vishwakarma</a><sup>1</sup></span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>Artificial Intelligence and Machine Learning Society,</span>
+            <span class="author-block">Delhi Technological University</span>
+          </div>
+
+          <div class="is-size-6 publication-authors publication-note">
+            <span class="author-block"><sup>*</sup>Equal contribution</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <span class="link-block">
+                <a class="button is-normal is-rounded is-dark" href="./static/pdf/am_i_audible_now.pdf">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- TODO: arXiv URL. -->
+              <span class="link-block">
+                <a class="button is-normal is-rounded is-dark" href="#">
+                  <span class="icon"><i class="ai ai-arxiv"></i></span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- TODO: code repository URL. -->
+              <span class="link-block">
+                <a class="button is-normal is-rounded is-dark" href="#">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                  <span>Code</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a class="button is-normal is-rounded is-dark" href="https://www.openslr.org/12">
+                  <span class="icon"><i class="fas fa-database"></i></span>
+                  <span>Data</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <img src="./static/images/method.png"
+           alt="Method schematic. Input speech is encoded into eight RVQ codebooks. One codebook is left untouched, zeroed out, or replaced with its most frequent code, and each code set is decoded. Pitch and energy are extracted from each reconstruction and compared against the unablated reference.">
+      <h2 class="subtitle has-text-centered">
+        We ablate one RVQ codebook at a time, decode the result, and measure how far pitch,
+        energy, and intelligibility move from the unablated reconstruction.
+      </h2>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <div class="carousel results-carousel">
+        <div class="item">
+          <img src="./static/images/mimi_f0_clean.png"
+               alt="Bar chart of clean-condition pitch effect per Mimi codebook under zero and mean ablation.">
+          <p class="item-caption">Mimi, clean speech: pitch effect per codebook under both ablation modes.</p>
+        </div>
+        <div class="item">
+          <img src="./static/images/mimi_f0_noise.png"
+               alt="Bar chart of pitch effect for the seven intelligibility-preserving Mimi codebooks across four noise conditions.">
+          <p class="item-caption">Mimi: the restricted-set pitch ranking across clean, 15, 5, and 0 dB.</p>
+        </div>
+        <div class="item">
+          <img src="./static/images/cross_codec_match.png"
+               alt="Bar chart of restricted-set argmax match rate for Mimi, SpeechTokenizer, and EnCodec against permutation nulls.">
+          <p class="item-caption">Per-utterance agreement against each codec's own permutation null.</p>
+        </div>
+        <div class="item">
+          <img src="./static/images/margin_split.png"
+               alt="Bar chart of argmax match rate for decisive and ambiguous utterances at three noise levels.">
+          <p class="item-caption">Agreement is higher when the clean-condition top-two margin is large.</p>
+        </div>
+        <div class="item">
+          <img src="./static/images/scatter_mimi.png"
+               alt="Scatter plot of STOI against pitch effect for the eight Mimi codebooks.">
+          <p class="item-caption">Mimi: intelligibility damage against pitch effect, all eight codebooks.</p>
+        </div>
+        <div class="item">
+          <img src="./static/images/scatter_speechtokenizer.png"
+               alt="Scatter plot of STOI against pitch effect for the eight SpeechTokenizer codebooks.">
+          <p class="item-caption">SpeechTokenizer: four codebooks fall below the confound threshold.</p>
+        </div>
+        <div class="item">
+          <img src="./static/images/scatter_encodec.png"
+               alt="Scatter plot of STOI against pitch effect for the eight EnCodec codebooks.">
+          <p class="item-caption">EnCodec: a single confounded codebook, as with Mimi.</p>
+        </div>
+        <div class="item">
+          <img src="./static/images/mimi_energy.png"
+               alt="Bar chart of energy effect for the seven intelligibility-preserving Mimi codebooks across four noise conditions.">
+          <p class="item-caption">Mimi: energy effects shrink steadily as noise increases.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            The functional organization of prosody within the Residual Vector Quantization (RVQ)
+            codebooks of neural audio codecs remains an open question. Prior work relies on
+            correlational probing, showing that pitch features can be decoded from frozen codebook
+            embeddings. Decodability, however, does not imply causal necessity: a codebook may
+            encode pitch information the decoder ignores, while another may be essential despite
+            containing little probe-recoverable signal.
+          </p>
+          <p>
+            We address this gap through causal output-side ablation: for each codebook, we zero or
+            mean-replace its discrete tokens, re-decode the waveform, and measure degradation in
+            fundamental frequency F<sub>0</sub> (CREPE), energy (frame-wise RMS), and
+            intelligibility (STOI) against the unablated reconstruction. Experiments span 200
+            LibriSpeech test-clean utterances under clean, 15, 5, and 0 dB SNR with MUSAN noise
+            across multiple neural audio codecs.
+          </p>
+          <p>
+            Across different architectures, we find a consistent two-tier causal structure: a
+            codec-specific subset of codebooks is reconstruction-critical, while the remaining
+            intelligibility-preserving codebooks exhibit a stable pitch-contribution hierarchy that
+            persists under additive noise. These findings provide new evidence for how neural audio
+            codecs causally organize prosodic information.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Approach</h2>
+        <div class="content has-text-justified">
+          <p>
+            A probe trained on frozen embeddings tells us whether pitch can be read out of a
+            codebook. It does not tell us whether the decoder uses that codebook when it
+            reconstructs pitch. To answer the second question we intervene on the codes directly.
+            For each of the eight codebooks we either set its codes to zero
+            (<em>zero-ablation</em>) or replace them with that codebook's most frequent code
+            (<em>mean-ablation</em>), decode, and compare the output against the unablated
+            reconstruction of the same input. Mean-ablation serves as a gentler control, because
+            zeroing a middle RVQ layer also disturbs the residual assumption of every layer after
+            it.
+          </p>
+          <p>
+            All three metrics are computed on the output waveform, at each codec's native sample
+            rate. At every noise level the reference is that level's own unablated reconstruction
+            and not the clean original, so the measurement isolates which codebook the decoder
+            depends on from the plain fact that noise degrades everything. We study
+            <a href="https://arxiv.org/abs/2410.00037">Mimi</a>,
+            <a href="https://arxiv.org/abs/2308.16692">SpeechTokenizer</a>, and
+            <a href="https://arxiv.org/abs/2210.13438">EnCodec</a>, the last of which has no
+            distilled semantic codebook at all.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3">Necessity without Specificity</h2>
+          <p>
+            Removing any codebook lowers intelligibility, but on Mimi one codebook breaks it
+            outright: masking codebook 1 drops STOI to about two-thirds of the lowest value any
+            other codebook reaches. Its large pitch effect is therefore confounded with general
+            collapse. Among the rest, codebooks 2, 3, and 4 sit at nearly identical STOI yet
+            differ by more than a factor of 2.5 in pitch effect, which a pure
+            reconstruction-damage account cannot explain.
+          </p>
+          <img class="figure" src="./static/images/scatter_mimi.png"
+               alt="Scatter plot of STOI against clean-condition pitch effect for the eight Mimi codebooks. Codebook 1 is isolated at low STOI.">
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3">Stability under Noise</h2>
+          <p>
+            Once the confounded codebook is set aside, the remaining seven produce a pitch
+            ranking that holds across noise conditions, and holds more firmly than the
+            unfiltered eight-codebook ranking does. Spearman correlation between the clean and
+            noisy profiles stays at or above 0.96 on Mimi under zero-ablation, at 15, 5, and
+            0 dB SNR.
+          </p>
+          <img class="figure" src="./static/images/mimi_f0_noise.png"
+               alt="Bar chart of pitch effect per Mimi codebook, restricted to the seven intelligibility-preserving codebooks, across four noise conditions.">
+        </div>
+      </div>
+    </div>
+
+    <div class="columns is-centered">
+      <div class="column">
+        <h2 class="title is-3">Explore the Results</h2>
+
+        <div class="subsection">
+          <h3 class="title is-4">Per-codebook pitch effect</h3>
+          <div class="content has-text-justified">
+            <p>
+              Select a codec and drag the slider to move from clean speech to heavier noise. Each
+              bar is the RMSE, in cents, between the F<sub>0</sub> contour of the ablated
+              reconstruction and that of the unablated one, averaged over 200 utterances.
+              Codebooks marked with an asterisk are reconstruction-critical and are excluded from
+              the prosody ranking.
+            </p>
+          </div>
+          <div class="columns is-vcentered chart-panel">
+            <div class="column is-3 has-text-centered">
+              <div class="buttons has-addons codec-switch" id="codec-switch">
+                <button type="button" class="button is-small" data-codec="mimi">Mimi</button>
+                <button type="button" class="button is-small" data-codec="speechtokenizer">SpeechTokenizer</button>
+                <button type="button" class="button is-small" data-codec="encodec">EnCodec</button>
+              </div>
+              <p class="chart-note" id="chart-note"></p>
+            </div>
+            <div class="column">
+              <div class="chart-wrapper">
+                <div class="chart-legend">
+                  <span><i class="swatch swatch-zero"></i>Zero-ablation</span>
+                  <span><i class="swatch swatch-mean"></i>Mean-ablation</span>
+                </div>
+                <svg class="chart" id="f0-chart" role="img"
+                     aria-label="Grouped bar chart of pitch effect per codebook under zero and mean ablation."></svg>
+                <div class="chart-tooltip" id="chart-tooltip" hidden></div>
+              </div>
+              <input class="slider is-fullwidth is-large is-info" id="condition-slider"
+                     type="range" min="0" max="3" step="1" value="0" aria-label="Noise condition">
+            </div>
+            <div class="column is-3 has-text-centered">
+              <p class="condition-readout" id="condition-readout" aria-live="polite"></p>
+              <p>Noise condition</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3 class="title is-4">Generalization across codecs</h3>
+          <div class="content has-text-justified">
+            <p>
+              The same two-tier picture appears on all three codecs. SpeechTokenizer spreads the
+              confound over four codebooks, while EnCodec, which has no semantic codebook,
+              concentrates it on one, as Mimi does. In each case the per-utterance agreement
+              between clean and noisy conditions clears its own permutation null.
+            </p>
+          </div>
+          <div class="table-container">
+            <table class="table is-striped is-hoverable is-fullwidth results-table">
+              <thead>
+                <tr>
+                  <th>Codec</th>
+                  <th>Condition</th>
+                  <th>&rho; (zero)</th>
+                  <th>&rho; (mean)</th>
+                  <th>Match rate</th>
+                  <th>Null mean</th>
+                  <th><i>p</i></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td rowspan="3">Mimi<br><span class="table-sub">7 codebooks, n = 188</span></td>
+                  <td>15 dB</td><td>0.964</td><td>1.000</td><td>0.580</td><td>0.378</td><td>&lt; 10<sup>&minus;4</sup></td>
+                </tr>
+                <tr><td>5 dB</td><td>1.000</td><td>0.893</td><td>0.490</td><td>0.379</td><td>0.0003</td></tr>
+                <tr><td>0 dB</td><td>1.000</td><td>0.964</td><td>0.440</td><td>0.379</td><td>0.0170</td></tr>
+                <tr>
+                  <td rowspan="2">SpeechTokenizer<br><span class="table-sub">4 codebooks, n = 133</span></td>
+                  <td>15 dB</td><td>1.000</td><td>1.000</td><td>0.782</td><td>0.462</td><td>&lt; 10<sup>&minus;4</sup></td>
+                </tr>
+                <tr><td>5 dB</td><td>1.000</td><td>1.000</td><td>0.654</td><td>0.431</td><td>&lt; 10<sup>&minus;4</sup></td></tr>
+                <tr>
+                  <td rowspan="3">EnCodec<br><span class="table-sub">7 codebooks, n = 145</span></td>
+                  <td>15 dB</td><td>0.964</td><td>0.750</td><td>0.717</td><td>0.573</td><td>&lt; 10<sup>&minus;4</sup></td>
+                </tr>
+                <tr><td>5 dB</td><td>0.893</td><td>0.964</td><td>0.655</td><td>0.536</td><td>0.0002</td></tr>
+                <tr><td>0 dB</td><td>0.893</td><td>0.786</td><td>0.634</td><td>0.514</td><td>0.0002</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="content has-text-justified">
+            <p class="table-caption">
+              Restricted-set stability. &rho; is the Spearman correlation between the clean and
+              noisy per-codebook F<sub>0</sub>-effect profiles. Match rate is the fraction of
+              utterances whose most pitch-critical codebook is the same in both conditions, under
+              zero-ablation, tested against a marginal-preserving permutation null.
+            </p>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3 class="title is-4">Zero- and mean-ablation do not always agree</h3>
+          <div class="content has-text-justified">
+            <p>
+              The two ablation modes agree only partially even on clean speech
+              (&rho; &asymp; 0.68 on Mimi) and drift further apart as noise increases. We attribute
+              this to the harsher disruption that zero-ablation imposes on the residual chain.
+              Each mode remains internally consistent across noise levels, so our conclusions rest
+              on within-method agreement and not on agreement between methods.
+            </p>
+          </div>
+          <img class="figure" src="./static/images/zero_vs_mean.png"
+               alt="Four scatter plots, one per noise condition, of zero-ablation against mean-ablation pitch effect per Mimi codebook. Codebook 1 sits far from the diagonal in every panel.">
+        </div>
+      </div>
+    </div>
+
+    <div class="columns is-centered">
+      <div class="column">
+        <h2 class="title is-3">Related Links</h2>
+        <div class="content has-text-justified">
+          <p>
+            This study builds on a line of work that asks what neural audio codecs represent, and
+            we are grateful to the authors whose results motivated it.
+          </p>
+          <p>
+            <a href="https://arxiv.org/abs/2603.14035">Probing neural audio codecs for distinctions among English nuclear tunes</a>
+            by Vigneaux and Cole, and "Is prosody encoded in the neural audio codec Mimi?" by
+            Ballier et al. (Speech Prosody 2026), find pitch recoverable from all eight Mimi
+            codebooks. Our ablations ask the complementary causal question.
+          </p>
+          <p>
+            <a href="https://arxiv.org/abs/2006.00995">Amnesic Probing</a> by Elazar et al. sets
+            out the general argument that probe accuracy does not establish that a model uses the
+            probed information.
+          </p>
+          <p>
+            "Probing the Robustness Properties of Neural Speech Codecs" by Tseng and Harwath
+            (Interspeech 2025) benchmarks codecs under noise and reverberation as black boxes, and
+            "Bringing Interpretability to Neural Audio Codecs" by Sadok et al. (Interspeech 2025)
+            maps RVQ layers to content, speaker, and pitch with an association model.
+          </p>
+          <p>
+            Our measurements rely on <a href="https://arxiv.org/abs/1802.06182">CREPE</a> for pitch
+            estimation, <a href="https://www.openslr.org/12">LibriSpeech</a> for speech, and
+            <a href="https://arxiv.org/abs/1510.08484">MUSAN</a> for additive noise.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <!-- TODO: add venue once the proceedings entry is final. -->
+    <pre><code>@misc{gupta2026audible,
+  author = {Gupta, Nikunj and Rai, Shreshth and Sharma, Kartik and Vishwakarma, Dinesh Kumar},
+  title  = {Am I Audible Now? Dissecting Prosody in Neural Audio Codecs},
+  year   = {2026},
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <a class="icon-link" href="./static/pdf/am_i_audible_now.pdf" aria-label="Paper PDF">
+        <i class="fas fa-file-pdf"></i>
+      </a>
+      <!-- TODO: code repository URL. -->
+      <a class="icon-link" href="#" aria-label="Code repository">
+        <i class="fab fa-github"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is licensed under a
+            <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+            Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+          <p>
+            The page design is borrowed from the
+            <a href="https://github.com/nerfies/nerfies.github.io">source code</a> of the
+            <a href="https://nerfies.github.io">Nerfies</a> project page, with thanks to its
+            authors.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
